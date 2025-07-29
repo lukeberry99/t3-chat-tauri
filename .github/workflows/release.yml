@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Tauri app for Apple Silicon
+        run: npm run tauri build -- --target aarch64-apple-darwin
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Get tag name
+        id: tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: T3 Chat ${{ steps.tag.outputs.tag }}
+          draft: false
+          prerelease: false
+          files: |
+            ./src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/T3 Chat_${{ steps.tag.outputs.tag }}_aarch64.dmg
+            ./src-tauri/target/aarch64-apple-darwin/release/bundle/macos/T3 Chat.app.tar.gz
+          body: |
+            ## What's Changed
+            
+            Release ${{ steps.tag.outputs.tag }} of T3 Chat desktop app.
+            
+            ### Downloads
+            - **macOS Apple Silicon**: Download the `.dmg` file below
+            
+            ### Installation
+            1. Download the appropriate file for your system
+            2. Open the downloaded file
+            3. Drag T3 Chat to your Applications folder
+            
+            **Note**: On macOS, you may need to right-click and select "Open" the first time due to Gatekeeper.
