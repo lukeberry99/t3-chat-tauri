@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "T3 Chat",
+  "version": "0.1.0",
+  "identifier": "com.t3-chat.app",
+  "build": {
+    "beforeDevCommand": "",
+    "devUrl": "https://t3.chat",
+    "beforeBuildCommand": "",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "T3 Chat",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "url": "https://t3.chat"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' https://t3.chat https://*.t3.chat; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://t3.chat https://*.t3.chat; style-src 'self' 'unsafe-inline' https://t3.chat https://*.t3.chat; img-src 'self' data: https: blob:; font-src 'self' https: data:; connect-src 'self' https: wss: ws:; media-src 'self' https: blob:; object-src 'none'; base-uri 'self';"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
