@@ -82,8 +82,12 @@ jobs:
       - name: Build Tauri app for Apple Silicon
         run: npm run tauri build -- --target aarch64-apple-darwin
 
-      - name: Sign app (ad-hoc)
-        run: codesign --force --deep --sign - "src-tauri/target/aarch64-apple-darwin/release/bundle/macos/T3 Chat.app"
+      - name: Sign app and DMG (ad-hoc)
+        run: |
+          # Sign the app bundle
+          codesign --force --deep --sign - "src-tauri/target/aarch64-apple-darwin/release/bundle/macos/T3 Chat.app"
+          # Remove quarantine attributes from the DMG
+          xattr -cr "src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/"*.dmg || true
 
       - name: Create Release
         id: create_release
