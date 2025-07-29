@@ -27,6 +27,16 @@ jobs:
         with:
           targets: aarch64-apple-darwin
 
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
       - name: Get tag name
         id: tag
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
@@ -49,11 +59,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache Tauri build dependencies
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/target
+          key: ${{ runner.os }}-tauri-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-tauri-
+
       - name: Build npm dependencies
         run: npm run build
 
+      - name: Cache build output
+        uses: actions/cache@v4
+        with:
+          path: dist
+          key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**/*') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-
+            ${{ runner.os }}-build-
+
       - name: Build Tauri app for Apple Silicon
         run: npm run tauri build -- --target aarch64-apple-darwin
+
+      - name: Sign app (ad-hoc)
+        run: codesign --force --deep --sign - "src-tauri/target/aarch64-apple-darwin/release/bundle/macos/T3 Chat.app"
 
       - name: Create Release
         id: create_release
@@ -74,8 +104,15 @@ jobs:
             - **macOS Apple Silicon**: Download the `.dmg` file below
             
             ### Installation
-            1. Download the appropriate file for your system
+            1. Download the `.dmg` file below
             2. Open the downloaded file
             3. Drag T3 Chat to your Applications folder
+            4. **Important**: Right-click the app in Applications → "Open" (first time only)
+            5. Click "Open" when macOS asks for confirmation
             
-            **Note**: On macOS, you may need to right-click and select "Open" the first time due to Gatekeeper.
+            If you still get a "damaged" error, run this command in Terminal:
+            ```
+            xattr -cr "/Applications/T3 Chat.app"
+            ```
+            
+            **Note**: This app uses ad-hoc signing for free distribution. The security warning is normal for apps not distributed through the App Store.
