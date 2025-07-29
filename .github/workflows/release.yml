@@ -43,6 +43,19 @@ jobs:
         id: tag
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
+      - name: Verify version matches tag
+        run: |
+          TAG_VERSION="${{ steps.tag.outputs.tag }}"
+          TAG_VERSION_NUMBER=${TAG_VERSION#v}  # Remove 'v' prefix
+          TAURI_VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          
+          if [ "$TAG_VERSION_NUMBER" != "$TAURI_VERSION" ]; then
+            echo "Error: Git tag version ($TAG_VERSION_NUMBER) does not match tauri.conf.json version ($TAURI_VERSION)"
+            exit 1
+          fi
+          
+          echo "✅ Version check passed: $TAURI_VERSION"
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -53,7 +66,6 @@ jobs:
           prerelease: false
           files: |
             ./src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/T3 Chat_${{ steps.tag.outputs.tag }}_aarch64.dmg
-            ./src-tauri/target/aarch64-apple-darwin/release/bundle/macos/T3 Chat.app.tar.gz
           body: |
             ## What's Changed
             
